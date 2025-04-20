@@ -118,7 +118,7 @@ export function SelfieUpload({ onUpload, currentImage }: SelfieUploadProps) {
               </p>
             ) : isDragActive ? (
               <p className="text-lg font-semibold text-primary">
-                Drop it like it's hot! 🔥
+                Drop it like its hot! 🔥
               </p>
             ) : (
               <>

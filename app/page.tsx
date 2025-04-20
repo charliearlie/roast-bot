@@ -1,103 +1,340 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { ImageUpload } from "./components/ImageUpload";
+import { Button } from "./components/ui/Button";
+import { Toggle } from "./components/ui/Toggle";
+import { ToneSelection } from "./components/ToneSelection";
+import { MemeOutput } from "./components/MemeOutput";
+import { PROMPT_QUESTIONS } from "./lib/constants";
+import { generateContent } from "./lib/api";
+import { ToneSeverity, ToneStyle } from "./lib/openai";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
+import { LoadingSpinner } from "./components/ui/LoadingSpinner";
+import { SelfieUpload } from "./components/SelfieUpload";
+import { PromptQuestions } from "./components/PromptQuestions";
+import { getFollowUpPrompts } from "./lib/prompts";
+import { FeedbackButtons } from "./components/FeedbackButtons";
+
+type InputMode = "selfie" | "prompts";
+type OutputMode = "roast" | "compliment";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [inputMode, setInputMode] = useState<InputMode>("selfie");
+  const [outputMode, setOutputMode] = useState<OutputMode>("roast");
+  const [response, setResponse] = useState<string | null>(null);
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toneSeverity, setToneSeverity] = useState<ToneSeverity>("medium");
+  const [toneStyle, setToneStyle] = useState<ToneStyle>("sarcastic");
+  const [showMemeOptions, setShowMemeOptions] = useState(false);
+  const [showMemeOutput, setShowMemeOutput] = useState(false);
+  const [followUpPrompts, setFollowUpPrompts] = useState<string[]>([
+    "Make it more brutal",
+    "Add a comeback",
+    "Make it funnier",
+    "Add a plot twist",
+  ]);
+  const [contentId] = useState(() => Math.random().toString(36).substr(2, 9));
+  const [lastUsedPrompt, setLastUsedPrompt] = useState<string | undefined>();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleImageUpload = (imageData: string) => {
+    setCurrentImage(imageData);
+    setError(null);
+
+    // Reset form if image is cleared
+    if (!imageData) {
+      setResponse(null);
+      setShowMemeOptions(false);
+      setShowMemeOutput(false);
+      // Reset to default tone settings
+      setToneSeverity("medium");
+      setToneStyle("sarcastic");
+    }
+  };
+
+  const handleAnswersSubmit = (newAnswers: Record<string, string>) => {
+    setAnswers(newAnswers);
+    setError(null);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setShowMemeOptions(false);
+      setShowMemeOutput(false);
+      setLastUsedPrompt(undefined);
+
+      const result = await generateContent({
+        type: outputMode,
+        inputType: inputMode === "selfie" ? "image" : "text",
+        imageData: currentImage || undefined,
+        text:
+          inputMode === "prompts"
+            ? Object.values(answers).join("\n")
+            : undefined,
+        severity: toneSeverity,
+        style: toneStyle,
+      });
+
+      if (result.generatedText) {
+        setResponse(result.generatedText);
+        setShowMemeOptions(true);
+        const suggestions = getFollowUpPrompts(
+          outputMode,
+          toneSeverity,
+          toneStyle
+        );
+        setFollowUpPrompts(suggestions.map((s) => s.text));
+      } else {
+        throw new Error("No response received from the server");
+      }
+    } catch (err) {
+      console.error("Error generating response:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to generate response"
+      );
+      setResponse(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFollowUpPrompt = async (prompt: string) => {
+    if (!response) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      setShowMemeOptions(false);
+      setShowMemeOutput(false);
+      setLastUsedPrompt(prompt);
+
+      const result = await generateContent({
+        type: outputMode,
+        inputType: "text",
+        text: `${response}\n\nFollow-up: ${prompt}`,
+        severity: toneSeverity,
+        style: toneStyle,
+      });
+
+      if (result.generatedText) {
+        setResponse(result.generatedText);
+        setShowMemeOptions(true);
+      } else {
+        throw new Error("No response received from the server");
+      }
+    } catch (err) {
+      console.error("Error generating follow-up:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to generate follow-up"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isValid =
+    inputMode === "selfie"
+      ? !!currentImage
+      : Object.values(answers).every((answer) => answer.trim().length > 0);
+
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <ErrorBoundary>
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Main Content Container */}
+          <div className="w-full max-w-2xl bg-secondary-background p-8 border-4 border-border shadow-shadow">
+            {/* Headers */}
+            <div className="text-center mb-12">
+              <h1 className="text-6xl font-extrabold mb-4 text-foreground hover:rotate-1 transition-transform">
+                Roast Me
+              </h1>
+              <h2 className="text-2xl text-foreground/80">or compliment me</h2>
+            </div>
+
+            {/* Mode Toggle */}
+            <div className="mb-8 flex justify-center">
+              <Toggle
+                pressed={inputMode === "prompts"}
+                onPressedChange={(pressed) =>
+                  setInputMode(pressed ? "prompts" : "selfie")
+                }
+              >
+                {inputMode === "prompts" ? "Answer Prompts" : "Upload Selfie"}
+              </Toggle>
+            </div>
+
+            {/* Input Section */}
+            <div className="w-full space-y-6">
+              {inputMode === "selfie" ? (
+                <ErrorBoundary>
+                  <SelfieUpload
+                    onUpload={handleImageUpload}
+                    currentImage={currentImage}
+                  />
+                </ErrorBoundary>
+              ) : (
+                <ErrorBoundary>
+                  <PromptQuestions onAnswersChange={handleAnswersSubmit} />
+                </ErrorBoundary>
+              )}
+
+              {/* Tone Selection */}
+              <ToneSelection
+                severity={toneSeverity}
+                style={toneStyle}
+                onChange={(severity, style) => {
+                  setToneSeverity(severity);
+                  setToneStyle(style as ToneStyle);
+                }}
+              />
+
+              {/* Action Buttons */}
+              <div className="flex justify-center gap-4">
+                <Button
+                  onClick={() => {
+                    setOutputMode("roast");
+                    handleSubmit();
+                  }}
+                  disabled={!isValid || isLoading}
+                  className="flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    "Roast Me"
+                  )}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setOutputMode("compliment");
+                    handleSubmit();
+                  }}
+                  disabled={!isValid || isLoading}
+                  className="flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    "Compliment Me"
+                  )}
+                </Button>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="w-full p-4 bg-red-100 border-2 border-red-500 text-red-700 rounded flex items-center gap-2">
+                  <span className="flex-1">{error}</span>
+                  <Button
+                    onClick={() => setError(null)}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              )}
+
+              {/* Response Section */}
+              {isLoading ? (
+                <div className="w-full min-h-[100px] bg-background p-6 border-4 border-border shadow-shadow flex flex-col items-center justify-center">
+                  <LoadingSpinner size="lg" />
+                  <p className="mt-4 text-lg font-semibold text-gray-500">
+                    Generating your response...
+                  </p>
+                </div>
+              ) : response ? (
+                <div className="w-full space-y-6">
+                  <div className="w-full bg-background p-6 border-4 border-border shadow-shadow">
+                    <p className="text-xl font-bold text-center">{response}</p>
+
+                    {/* Add Feedback Buttons */}
+                    <div className="mt-6">
+                      <FeedbackButtons
+                        contentId={contentId}
+                        type={outputMode}
+                        promptUsed={lastUsedPrompt}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Follow-up Options */}
+                  <div className="flex flex-wrap gap-4 justify-center">
+                    {getFollowUpPrompts(
+                      outputMode,
+                      toneSeverity,
+                      toneStyle
+                    ).map((prompt) => (
+                      <Button
+                        key={prompt.text}
+                        onClick={() => handleFollowUpPrompt(prompt.text)}
+                        variant="secondary"
+                        disabled={isLoading}
+                        className="flex items-center gap-2 group relative"
+                        title={prompt.description}
+                      >
+                        {isLoading ? (
+                          <>
+                            <LoadingSpinner size="sm" />
+                            <span>Generating...</span>
+                          </>
+                        ) : (
+                          <>
+                            {prompt.text}
+                            {prompt.description && (
+                              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                {prompt.description}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Meme Generation Option */}
+                  {showMemeOptions && (
+                    <div className="flex flex-col items-center gap-4 mt-8">
+                      <Button
+                        onClick={() => setShowMemeOutput(true)}
+                        variant="secondary"
+                        className="flex items-center gap-2"
+                      >
+                        {showMemeOutput ? "Hide Meme" : "Turn this into a Meme"}
+                      </Button>
+                      {showMemeOutput && (
+                        <ErrorBoundary>
+                          <MemeOutput
+                            prompt={response}
+                            customImageUrl={currentImage || undefined}
+                            type={outputMode}
+                          />
+                        </ErrorBoundary>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="w-full min-h-[100px] bg-background p-6 border-4 border-border shadow-shadow">
+                  <p className="text-center text-gray-500">
+                    Your {outputMode} will appear here...
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </ErrorBoundary>
+    </main>
   );
 }

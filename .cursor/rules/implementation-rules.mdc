@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Implemenation rules
+
+- Always work from the [implementation-plan.md](mdc:development-docs/implementation-plan.md) and update the file with any changes you have made, ensuring they are checked. 
+- Always follow the [design-system.md](mdc:development-docs/design-system.md) and use [app-prd.mdc](mdc:.cursor/app-prd.mdc) to understand the outline of the project. 
+- Always read from [implementation-progress.md](mdc:development-docs/implementation-progress.md) to know how things have been done, and update it to describe your changes. 

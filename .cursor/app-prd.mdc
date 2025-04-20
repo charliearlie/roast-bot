@@ -1,0 +1,176 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# App PRD
+
+Product Requirements Document: AI Roast Me
+App Name (Working Title):
+RoastBot: The AI That Keeps It Too Real
+
+Overview
+A fun, meme-style app where users upload selfies or answer short prompts to receive AI-generated roasts or compliments. The app leans into humour, virality, and social sharing — all wrapped in a bold, neo-brutalist design system with a red-heavy palette.
+
+Goals
+Launch in 1 day with a viral-ready MVP.
+
+Use AI to generate roasts/compliments based on inputs.
+
+Keep it fun, sharable, and monetisable with personality packs.
+
+Design system: Neo-Brutalism, primary colour red.
+
+Core Features
+1. Home Screen
+Big red “Roast Me” and “Compliment Me” buttons.
+
+Toggle between selfie upload or answer prompts.
+
+Neon-style black/white background with chunky fonts and grid layout.
+
+2. Input Methods
+Selfie Upload: Image sent to AI for light analysis (no real facial recognition; just used for fun).
+
+Prompt Questions: E.g., “What’s your biggest flex?”, “What’s your guilty pleasure?”, “Describe yourself in 3 words.”
+
+3. AI Output Generator
+Generate either:
+
+Brutally funny roast (e.g., "You're the human version of a 404 error.")
+
+Ridiculously over-the-top compliment (e.g., "If charisma were currency, you'd be Jeff Bezos and Elon Musk's lovechild.")
+
+Option to choose tone:
+
+Mild / Medium / Nuclear
+
+Formal / Sarcastic / Shakespearean / Rap Battle
+
+4. Personality Packs (Archetypes)
+Replace celebrity references with safe parodies:
+
+“Shouty Chef”
+
+“Posh Drama Queen”
+
+“Woke Philosopher”
+
+“Old School Drill Sergeant”
+
+Each pack adds themed language and visuals.
+
+5. Meme Format Output
+Roast/compliment displayed overlaid on:
+
+Uploaded image
+
+Preloaded meme-style templates
+
+Includes app watermark + call-to-action: “Get yours at RoastBot.app”
+
+Option to save/share on socials (Instagram, TikTok, etc.)
+
+6. Viral Hooks
+“Roast Battle” Mode: Share your roast, challenge a friend.
+
+“Public Leaderboard”: Funniest roasts (voted by community).
+
+Hashtag suggestions on share (e.g., #AIroastme, #TooRealBot)
+
+7. Microtransactions
+In-app purchase packs:
+
+Personality Packs (£0.99 each or bundle)
+
+Premium Templates
+
+Custom Rant Generator
+
+Optional "Roast Me Daily" subscription for fresh content.
+
+8. Settings & Legal
+Disclaimer: “This app is for entertainment. We’re not affiliated with any public figure.”
+
+Privacy policy (clearly states no personal data or images are stored long-term).
+
+Opt-in for analytics.
+
+Design System: Neo-Brutalism
+Primary Colour: Bold Red #FF1A1A
+
+Secondary Colours: Black, White, Charcoal Grey
+
+Typography: Monospace or heavy sans-serif (e.g., Satoshi or Inter Black)
+
+UI Style:
+
+Harsh shadows, solid borders
+
+Blocks, grids, overlaid labels
+
+Minimal polish, maximum attitude
+
+Contrasting button hovers (e.g., red to black)
+
+Tech Stack
+Frontend: React Native (for mobile) or Next.js (for web)
+
+AI Backend: OpenAI (for roast/compliment generation)
+
+Image Processing: Lightweight meme template engine
+
+Storage: Supabase (optional for user save history)
+
+Payments: Stripe / RevenueCat
+
+Timeline
+Day 1:
+
+Build UI skeleton + basic roast prompt + meme overlay
+
+Integrate AI responses (OpenAI or similar)
+
+Day 2+ (Optional):
+
+Add monetisation
+
+Add personality packs
+
+Implement social sharing + viral leaderboard
+
+System prompt for AI roast generator
+You are RoastBot, the snarky AI whose primary purpose is to deliver hilariously brutal roasts and over-the-top compliments. Follow these instructions:
+
+1. Primary Input: Image Upload
+   - **Image Analysis:** When a user uploads an image, extract visual cues such as expressions, style, and context. Use these cues to generate a tailored roast or compliment.
+   - **Fallback:** If the image analysis yields insufficient detail, prompt for a short text input to refine context.
+
+2. Style & Tone:
+   - Determine if the user is requesting a roast or a compliment based on their selection or contextual cues from the image.
+   - For roasts, generate humorously brutal, sarcastic responses. For compliments, generate exaggerated, humorous praise.
+   - Adhere to three defined tone levels: Mild, Medium, Nuclear.
+   - Adjust language to match the selected personality pack (e.g., "Shouty Chef", "Woke Philosopher", "Posh Drama Queen", "Old School Drill Sergeant").
+
+3. Content Guidelines:
+   - Keep output concise: 1-2 sentences maximum.
+   - Use clear, witty, and unmistakably ironic language.
+   - Maintain humor without crossing into harmful, explicit, or defamatory content.
+   - Utilize parody and satire, especially when referencing public figures or pop culture, including a non-affiliation disclaimer where relevant.
+
+4. Output Formatting:
+   - Return plain text that is easily overlaid on meme templates.
+   - Optionally, append a signature line (e.g., “— RoastBot”) if it fits the design.
+   - Ensure the text is legible against both light and dark backgrounds.
+
+5. Error Handling:
+   - If the image or any provided inputs are too vague or lacking context, respond with a playful prompt requesting more detail.
+   - Clearly indicate that all responses are generated solely for entertainment.
+
+Example:
+User uploads an image showing a quirky fashion style with a confident smirk.
+If Roast Mode (Mild): "That outfit is as bold as your ambitions—daring and a tad over the top! — RoastBot"
+If Compliment Mode (Mild): "Your style is so on point, it’s practically a work of art! — RoastBot"
+
+
